@@ -1,5 +1,3 @@
-from builtins import staticmethod
-
 from mysite.titanic.models.dataset import Dataset
 import pandas as pd
 import numpy as np
@@ -12,15 +10,11 @@ class Service(object):
     dataset = Dataset()
 
     def new_model(self, payload) -> object:
-        this = self.dataset         # this 가 dataset
-        this.context = '../data/'
-        this.fname = payload        # payload 는 외부에서 입력된 값 (ex. 파일명, 검색어, 등록값 ... 화면에서 입력하는값)
+        this = self.dataset
+        this.context = './data/'
+        this.fname = payload
         return pd.read_csv(this.context + this.fname)
 
-    # @staticmethod를 붙이지않고 def를 class와 같은 줄에 쓰면 그게 static
-    # 개념은 같지만 여기에서는 구분해주기 위해서 @staticmethod를 붙여줘서 사용
-
-    # 데이터 전처리
     @staticmethod
     def create_train(this) -> object:
         return this.train.drop('Survived', axis = 1) # axis 0 가로, 1 세로
@@ -30,36 +24,35 @@ class Service(object):
         return this.train['Survived']
 
     @staticmethod
-    def drop_feature(this, *feature) -> object:   # 필요없는 데이터는 삭제하는 메소드 ( 하나 이상을 지우기 위해 * 사용)
+    def drop_feature(this, *feature) -> object:
+
         for i in feature:
             this.train = this.train.drop([i], axis = 1)
             this.test = this.test.drop([i], axis=1)
             # 학습, 테스트 세트는 항상 동일하게 편집한다.
-            return this
+        return this
 
-    @staticmethod   # static : 공유하지않는 메소드
-    def embarked_nominal(this) -> object:  #필요없는 데이터는 위에서 지운 this를 받음
-        # na = 빈칸
-        this.train = this.train.fillna({'Embarked', 'S'})   # S는 사우스햄튼이라는 곳에서 무질서하게 탑승한것
-        this.test = this.test.fillna({'Embarked', 'S'})
-        this.train['Embarked'] = this.train['Embarked'].map({'S':1, 'C':2, 'Q':3})
+    @staticmethod
+    def embarked_nominal(this) -> object:
+        this.train = this.train.fillna({'Embarked': 'S'}) # S는 사우스햄튼
+        this.test = this.test.fillna({'Embarked': 'S'})  # S는 사우스햄튼
+        this.train['Embarked'] = this.train['Embarked'].map({'S': 1, 'C': 2, 'Q':3})
         this.test['Embarked'] = this.test['Embarked'].map({'S': 1, 'C': 2, 'Q': 3})
-        return this     # 위의 this와 다른 this (self를 쓰지 않음)
+        return this
 
-    # Name에서 title을 추출하는 로직
-    @staticmethod   # title은 이름 앞에 있는 칭호 (Mr., Major, Don...)
+    @staticmethod
     def title_norminal(this) -> object:
         combine = [this.train, this.test]
         for dataset in combine:
-            dataset['Title'] = dataset.Name.str.extract('([A-Za-z]+)\.', expand=False)      # ([A-Za-z]+)\. 는 정규식, 알파벳만 있는 글자 [...]이고, \는 .을 특수기호아닌 자연어로 해석하라.
+            dataset['Title'] = dataset.Name.str.extract('([A-Za-z]+)\.', expand=False)
         for dataset in combine:
             dataset['Title'] = dataset['Title'].replace(
-                ['Capt', 'Col', 'Don', 'Dr', 'Major', 'Rev', 'Jonkheer', 'Dona'], 'Rare')   # []안에 있는것들은 'Rare'로 통합해라
+                ['Capt', 'Col', 'Don', 'Dr', 'Major', 'Rev', 'Jonkheer', 'Dona'], 'Rare')
             dataset['Title'] = dataset['Title'].replace(['Countess', 'Lady', 'Sir'], 'Royal')
             dataset['Title'] = dataset['Title'].replace('Mlle', 'Mr')
             dataset['Title'] = dataset['Title'].replace('Ms', 'Miss')
             dataset['Title'] = dataset['Title'].replace('Mme', 'Rare')
-            title_mapping = {'Mr': 1, 'Miss': 2, 'Mrs': 3, 'Master': 4, 'Royal': 5, 'Rare': 6}  # 숫자로 Mapping 해라 / Norminal(순서없는 숫자 표현)
+            title_mapping = {'Mr': 1, 'Miss': 2, 'Mrs': 3, 'Master': 4, 'Royal': 5, 'Rare': 6}
             dataset['Title'] = dataset['Title'].fillna(0)
             dataset['Title'] = dataset['Title'].map(title_mapping)
         return this
@@ -69,10 +62,9 @@ class Service(object):
         combine = [this.train, this.test]
         gender_mapping = {'male': 0, 'female': 1}
         for i in combine:
-            i['Gender'] = i['Sex'].map(gender_mapping)  # i[] 컬럼명 변경
+            i['Gender'] = i['Sex'].map(gender_mapping)
         return this
 
-    # AGE 를 오디널해서 편집하는 구조
     @staticmethod
     def age_ordinal(this) -> object:
         train = this.train
@@ -88,15 +80,16 @@ class Service(object):
             data['AgeGroup'] = data['AgeGroup'].map(age_title_mapping)
         return this
 
-    # 요금
     @staticmethod
     def fare_ordinal(this) -> object:
+
+        this.train['FareBand'] = pd.qcut(this.train['Fare'], 4, labels={1,2,3,4}) # 최고와 최저를 통해 4등분하라
         this.test['FareBand'] = pd.qcut(this.test['Fare'], 4, labels={1,2,3,4})
-        this.train['FareBand'] = pd.qcut(this.train['Fare'], 4, labels={1,2,3,4}) # 최고와 최저를 통해 4등분해라
+        return this
 
     @staticmethod
     def create_k_fold() -> object:
-        return KFold(n_splits=10, shuffle=True, random_state=0) # 트레인데이터를 10등분, 반복출제 허용
+        return KFold(n_splits=10, shuffle= True, random_state=0 ) # 트레인데이터를 10등분, 반복출제 허용
 
     def get_accurcy(self, this):
         score = cross_val_score(RandomForestClassifier(),
@@ -104,7 +97,5 @@ class Service(object):
                                 this.label,
                                 cv=self.create_k_fold(),
                                 n_jobs=1,
-                                scoring='accuracy')   # RandomForestClassifier 는 엔진
-        return round(np.mean(score)*100, 2)     # 소수점 두자리까지 출력
-
-
+                                scoring='accuracy')
+        return round(np.mean(score)*100, 2)

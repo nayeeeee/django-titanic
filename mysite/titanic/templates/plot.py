@@ -38,10 +38,9 @@ class Plot(object):
 
     def draw_pclass(self):
         this = self.entity
-        this['생존결과'] = this['Survived'] \
-            .replace(0, '사망자').replace(1, '생존자')
-        this['Pclass'] = this['Pclass'].replace(1, '1등석').replace(2, '2등석').replace(3, '3등석')
-        sns.countplot(data=this, x='좌석등급', hue='생존결과')
+        this["생존결과"] = this["Survived"].replace(0, "사망자").replace(1, "생존자")
+        this["좌석등급"] = this["Pclass"].replace(1, "1등석").replace(2, "2등석").replace(3, "3등석")
+        sns.countplot(data=this, x="좌석등급", hue="생존결과")
         plt.show()
 
     def draw_sex(self):
@@ -57,9 +56,7 @@ class Plot(object):
 
     def draw_embarked(self):
         this = self.entity
-        this['생존결과'] = this['Survived'] \
-            .replace(0, '사망자').replace(1, '생존자')
-        this['승선항구'] = this['Embarked'] \
-            .replace("C", '쉘버그').replace("S", '사우스햄톤').replace("Q", '퀸즈타운')
-        sns.countplot(data=this, x='승선항구', hue='생존결과')
+        this["생존결과"] = this["Survived"].replace(0, "사망자").replace(1, "생존자")
+        this["승선항구"] = this["Embarked"].replace("C", "쉘버그").replace("S", "사우스헴튼").replace("Q", "퀸즈타운")
+        sns.countplot(data=this, x="승선항구", hue="생존결과")
         plt.show()
