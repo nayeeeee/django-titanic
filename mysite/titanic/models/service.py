@@ -3,6 +3,9 @@ from builtins import staticmethod
 from mysite.titanic.models.dataset import Dataset
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from sklearn.ensemble import RandomForestClassifier
 
 class Service(object):
 
@@ -17,6 +20,7 @@ class Service(object):
     # @staticmethod를 붙이지않고 def를 class와 같은 줄에 쓰면 그게 static
     # 개념은 같지만 여기에서는 구분해주기 위해서 @staticmethod를 붙여줘서 사용
 
+    # 데이터 전처리
     @staticmethod
     def create_train(this) -> object:
         return this.train.drop('Survived', axis = 1) # axis 0 가로, 1 세로
@@ -90,6 +94,17 @@ class Service(object):
         this.test['FareBand'] = pd.qcut(this.test['Fare'], 4, labels={1,2,3,4})
         this.train['FareBand'] = pd.qcut(this.train['Fare'], 4, labels={1,2,3,4}) # 최고와 최저를 통해 4등분해라
 
+    @staticmethod
+    def create_k_fold() -> object:
+        return KFold(n_splits=10, shuffle=True, random_state=0) # 트레인데이터를 10등분, 반복출제 허용
 
+    def get_accurcy(self, this):
+        score = cross_val_score(RandomForestClassifier(),
+                                this.train,
+                                this.label,
+                                cv=self.create_k_fold(),
+                                n_jobs=1,
+                                scoring='accuracy')   # RandomForestClassifier 는 엔진
+        return round(np.mean(score)*100, 2)     # 소수점 두자리까지 출력
 
 
